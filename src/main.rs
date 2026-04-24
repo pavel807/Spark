@@ -6,7 +6,8 @@ mod parser;
 use logos::Logos;
 use std::env;
 use std::fs;
-use std::process::Command; // Добавили для запуска
+use std::path::Path;
+use std::process::Command;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -17,6 +18,13 @@ fn main() {
     }
 
     let input_file = &args[1];
+
+    let path = Path::new(input_file);
+    if path.extension().map(|e| e != "sk").unwrap_or(true) {
+        eprintln!("❌ Ошибка: ожидается файл с расширением .sk (Spark Lang)");
+        std::process::exit(1);
+    }
+
     let mut output_name = "app";
     let mut should_run = false;
 

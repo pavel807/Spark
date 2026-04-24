@@ -10,6 +10,7 @@ pub enum Expr {
     Index { array: Box<Expr>, index: Box<Expr> },
     // Новое: вызов метода .method()
     MethodCall { receiver: Box<Expr>, method: String },
+    Input(Option<String>),
 }
 
 #[derive(Debug)]

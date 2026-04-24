@@ -38,6 +38,17 @@ impl Parser {
                 self.advance();
                 None
             }
+            Some(Token::Ident(name)) => {
+                if self.tokens.get(self.pos + 1) == Some(&Token::Assign) {
+                    self.advance(); // name
+                    self.advance(); // =
+                    let value = self.parse_expr();
+                    Some(Stmt::Let { name, value })
+                } else {
+                    self.advance();
+                    None
+                }
+            }
             _ => {
                 self.advance();
                 None
@@ -58,7 +69,14 @@ impl Parser {
 
     fn parse_print(&mut self) -> Stmt {
         self.advance(); // print
-        Stmt::Print(self.parse_expr())
+        if self.peek() == Some(Token::LParen) {
+            self.advance(); // (
+            let expr = self.parse_expr();
+            self.consume(Token::RParen);
+            Stmt::Print(expr)
+        } else {
+            Stmt::Print(self.parse_expr())
+        }
     }
 
     fn parse_if(&mut self) -> Stmt {
@@ -144,12 +162,56 @@ impl Parser {
                 Some(Token::Dot) => {
                     self.advance(); // .
                     if let Some(Token::Ident(method)) = self.advance() {
-                        expr = Expr::MethodCall {
-                            receiver: Box::new(expr),
-                            method,
-                        };
+                        if method == "input" {
+                            let prompt = if self.peek() == Some(Token::LParen) {
+                                self.advance(); // (
+                                let p = if self.peek() == Some(Token::RParen) {
+                                    None
+                                } else {
+                                    let e = self.parse_expr();
+                                    if let Expr::Str(s) = e {
+                                        Some(s)
+                                    } else {
+                                        None
+                                    }
+                                };
+                                self.consume(Token::RParen);
+                                p
+                            } else {
+                                None
+                            };
+                            expr = Expr::Input(prompt);
+                        } else {
+                            expr = Expr::MethodCall {
+                                receiver: Box::new(expr),
+                                method,
+                            };
+                        }
                     } else {
                         panic!("Ожидалось имя метода после '.'");
+                    }
+                }
+                Some(Token::LParen) => {
+                    if let Expr::Ident(i) = &expr {
+                        if i == "input" {
+                            self.advance(); // (
+                            let prompt = if self.peek() == Some(Token::RParen) {
+                                None
+                            } else {
+                                let e = self.parse_expr();
+                                if let Expr::Str(s) = e {
+                                    Some(s)
+                                } else {
+                                    None
+                                }
+                            };
+                            self.consume(Token::RParen);
+                            expr = Expr::Input(prompt);
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
                     }
                 }
                 _ => break,

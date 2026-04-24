@@ -1,10 +1,10 @@
 use crate::ast::{Expr, Stmt};
-use std::fs;
+use std::fs::{self};
 use std::process::Command;
 use tempfile::Builder;
 
 pub fn compile_to_binary(ast: Vec<Stmt>, output: &str) {
-    let mut rust_code = String::from("fn main() {\n");
+    let mut rust_code = String::from("use std::io::{Read, Write};\n\nfn main() {\n");
 
     for stmt in ast {
         rust_code.push_str(&gen_stmt(stmt));
@@ -35,7 +35,7 @@ fn gen_stmt(stmt: Stmt) -> String {
             format!("    let {} = {};\n", name, gen_expr(value))
         }
         Stmt::Print(expr) => {
-            format!("    println!(\"{{:?}}\", {});\n", gen_expr(expr))
+            format!("    println!(\"{{}}\", {});\n", gen_expr(expr))
         }
         Stmt::If {
             condition,
@@ -64,9 +64,16 @@ fn gen_stmt(stmt: Stmt) -> String {
 fn gen_expr(expr: Expr) -> String {
     match expr {
         Expr::Number(n) => n.to_string(),
-        Expr::Str(s) => format!("\"{}\".to_string()", s),
+        Expr::Str(s) => format!("\"{}\"", s),
         Expr::Ident(i) => i,
         Expr::Bool(b) => b.to_string(),
+        Expr::Input(prompt) => {
+            let prompt_str = prompt.unwrap_or_default();
+            format!(
+                "{{ let mut __input = String::new(); std::io::stdin().read_line(&mut __input).unwrap(); if !\"{}\".is_empty() {{ print!(\"{}\"); }} __input.trim().to_string() }}",
+                prompt_str, prompt_str
+            )
+        }
         Expr::BinaryOp(left, op, right) => {
             // Если это сложение и один из операндов — строка (определяем по " "), используем формат
             if op == "+" {
@@ -87,12 +94,19 @@ fn gen_expr(expr: Expr) -> String {
             // В Rust индекс должен быть usize
             format!("{}[{} as usize]", gen_expr(*array), gen_expr(*index))
         }
-        Expr::MethodCall { receiver, method } => {
-            match method.as_str() {
-                "len" => format!("{}.len()", gen_expr(*receiver)),
-                // Сюда можно добавлять другие методы: push, pop и т.д.
-                _ => panic!("Метод {} не поддерживается в Spark", method),
+        Expr::MethodCall { receiver, method } => match method.as_str() {
+            "len" => format!("{}.len()", gen_expr(*receiver)),
+            "input" => {
+                let prompt = match *receiver {
+                    Expr::Str(s) => s,
+                    _ => String::new(),
+                };
+                format!(
+                    "{{ let mut __input = String::new(); std::io::stdin().read_line(&mut __input).unwrap(); if !\"{}\".is_empty() {{ print!(\"{}\"); }} __input.trim().to_string() }}",
+                    prompt, prompt
+                )
             }
-        }
+            _ => panic!("Метод {} не поддерживается в Spark", method),
+        },
     }
 }
