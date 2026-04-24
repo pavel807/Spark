@@ -1,49 +1,155 @@
 use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq, Clone)]
-#[logos(skip r"[ \t\f]+")] // Пропускаем пробелы и табуляцию
+#[logos(skip r"[ \t\f]+")]
 pub enum Token {
-    // Ключевые слова
-    #[token("let")]
-    Let,
-    #[token("print")]
-    Print,
+    #[token("def")]
+    Def,
+    #[token("return")]
+    Return,
     #[token("if")]
     If,
     #[token("else")]
     Else,
-    #[token("true")]
+    #[token("elif")]
+    Elif,
+    #[token("for")]
+    For,
+    #[token("in")]
+    In,
+    #[token("while")]
+    While,
+    #[token("and")]
+    And,
+    #[token("or")]
+    Or,
+    #[token("not")]
+    Not,
+    #[token("True")]
     True,
-    #[token("false")]
+    #[token("False")]
     False,
+    #[token("None")]
+    None,
     #[token("import")]
     Import,
+    #[token("from")]
+    From,
+    #[token("class")]
+    Class,
+    #[token("try")]
+    Try,
+    #[token("except")]
+    Except,
+    #[token("finally")]
+    Finally,
+    #[token("raise")]
+    Raise,
+    #[token("with")]
+    With,
+    #[token("as")]
+    As,
+    #[token("pass")]
+    Pass,
+    #[token("break")]
+    Break,
+    #[token("continue")]
+    Continue,
+    #[token("lambda")]
+    Lambda,
+    #[token("yield")]
+    Yield,
+    #[token("global")]
+    Global,
+    #[token("nonlocal")]
+    Nonlocal,
+    #[token("del")]
+    Del,
+    #[token("assert")]
+    Assert,
+    #[token("is")]
+    Is,
 
-    // Идентификаторы и литералы
     #[regex("[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Ident(String),
+
+    #[regex(r"0[xX][0-9a-fA-F]+", |lex| lex.slice().to_string())]
+    HexNumber(String),
+
+    #[regex(r"0[oO][0-7]+", |lex| lex.slice().to_string())]
+    OctNumber(String),
+
+    #[regex(r"0[bB][01]+", |lex| lex.slice().to_string())]
+    BinNumber(String),
+
+    #[regex(r"[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?", |lex| lex.slice().to_string())]
+    Float(String),
+
+    #[regex(r"[0-9]+[eE][+-]?[0-9]+", |lex| lex.slice().to_string())]
+    ExpNumber(String),
 
     #[regex("[0-9]+", |lex| lex.slice().parse::<i64>().unwrap())]
     Number(i64),
 
-    #[regex(r#""[^"]*""#, |lex| lex.slice()[1..lex.slice().len()-1].to_string())]
+    #[regex(r#""[^"\\]*(?:\\.[^"\\]*)*""#, |lex| {
+        let s = lex.slice();
+        let inner = &s[1..s.len()-1];
+        let unescaped = inner.replace("\\\"", "\"").replace("\\n", "\n").replace("\\t", "\t").replace("\\\\", "\\");
+        unescaped
+    })]
     Str(String),
 
-    // Операторы
-    #[token("=")]
-    Assign,
+    #[regex(r#"'[^'\\]*(?:\\.[^'\\]*)*'"#, |lex| {
+        let s = lex.slice();
+        let inner = &s[1..s.len()-1];
+        let unescaped = inner.replace("\\'", "'").replace("\\n", "\n").replace("\\t", "\t").replace("\\\\", "\\");
+        unescaped
+    })]
+    StrSingle(String),
+
     #[token("==")]
     Eq,
+    #[token("!=")]
+    Neq,
+    #[token("<=")]
+    Leq,
+    #[token(">=")]
+    Geq,
     #[token(">")]
     Greater,
     #[token("<")]
     Less,
+    #[token("=")]
+    Assign,
+    #[token("+=")]
+    PlusAssign,
+    #[token("-=")]
+    MinusAssign,
+    #[token("*=")]
+    MulAssign,
+    #[token("/=")]
+    DivAssign,
+    #[token("//=")]
+    FloorDivAssign,
+    #[token("%=")]
+    ModAssign,
+    #[token("**=")]
+    PowAssign,
     #[token("+")]
     Plus,
     #[token("-")]
     Minus,
+    #[token("*")]
+    Mul,
+    #[token("/")]
+    Div,
+    #[token("%")]
+    Mod,
+    #[token("//")]
+    FloorDiv,
+    #[token("**")]
+    Pow,
 
-    // Разделители и знаки пунктуации
     #[token(",")]
     Comma,
     #[token(".")]
@@ -60,8 +166,13 @@ pub enum Token {
     LBrace,
     #[token("}")]
     RBrace,
+    #[token(":")]
+    Colon,
+    #[token(";")]
+    Semicolon,
+    #[token("->")]
+    Arrow,
 
-    // Перенос строки (важен для завершения выражений)
     #[regex(r"\n|(\r\n)")]
     Newline,
 }
