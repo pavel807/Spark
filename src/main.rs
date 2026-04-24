@@ -83,7 +83,7 @@ fn resolve_imports(ast: Vec<ast::Stmt>, main_file: &str) -> Result<Vec<ast::Stmt
                 
                 if let Some(aliased) = alias {
                     for imp in imported {
-                        if let ast::Stmt::Def { name, args, body } = imp {
+                        if let ast::Stmt::Def { name: _, args, body } = imp {
                             let new_stmt = ast::Stmt::Def {
                                 name: aliased.clone(),
                                 args,
@@ -122,7 +122,7 @@ fn main() {
 
     let mut output_name = "app";
     let mut should_run = false;
-    let mut opt_level = 3;
+    let mut opt_level = 1;
 
     for i in 1..args.len() {
         if args[i] == "-o" && i + 1 < args.len() {
@@ -131,16 +131,8 @@ fn main() {
         if args[i] == "--run" {
             should_run = true;
         }
-        if args[i].starts_with("--release") {
+        if args[i].starts_with("--release") || args[i] == "-r" {
             opt_level = 3;
-            if let Some(level) = args[i].split('=').nth(1) {
-                if let Ok(l) = level.parse::<i32>() {
-                    opt_level = l.clamp(1, 3);
-                }
-            }
-        }
-        if args[i].starts_with("--dev") {
-            opt_level = 1;
             if let Some(level) = args[i].split('=').nth(1) {
                 if let Ok(l) = level.parse::<i32>() {
                     opt_level = l.clamp(1, 3);

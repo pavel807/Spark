@@ -195,7 +195,7 @@ fn gen_stmt(stmt: Stmt) -> String {
             
             if !except_branches.is_empty() {
                 for (exc_type, alias, exc_body) in except_branches {
-                    let type_str = exc_type.unwrap_or_else(|| "Box<dyn std::error::Error>".to_string());
+                    let _type_str = exc_type.unwrap_or_else(|| "Box<dyn std::error::Error>".to_string());
                     let alias_str = alias.unwrap_or_else(|| "e".to_string());
                     code.push_str(&format!("    }}\n    Err({}) => {{\n", alias_str));
                     for s in exc_body {
@@ -379,7 +379,7 @@ fn gen_expr(expr: Expr) -> String {
                 gen_expr(*else_)
             )
         }
-        Expr::Input(prompt) => {
+        Expr::Input(_prompt) => {
             format!("{{ input() }}")
         }
     }
