@@ -1,7 +1,4 @@
-mod ast;
-mod codegen;
-mod lexer;
-mod parser;
+use spark::{ast, codegen, lexer, parser};
 
 use logos::Logos;
 use std::collections::HashMap;
@@ -158,7 +155,10 @@ fn main() {
         }
     };
 
-    codegen::compile_to_binary(resolved, output_name, opt_level);
+    if let Err(e) = codegen::compile_to_binary(resolved, output_name, opt_level) {
+        eprintln!("❌ Ошибка компиляции:\n{e}");
+        std::process::exit(1);
+    }
 
     if should_run {
         println!("🏃 Запуск {}...", output_name);

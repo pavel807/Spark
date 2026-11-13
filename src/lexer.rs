@@ -2,6 +2,10 @@ use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(skip r"[ \t\f]+")]
+// Комментарий — # до конца строки. Без этого лексер падал на первом #:
+// а шапка плагина (имя/описание/аргументы) живёт именно в комментариях.
+// (skip живёт в атрибуте #[logos]: #[regex] на enum logos молча игнорирует.)
+#[logos(skip(r"#[^\n]*", allow_greedy = true))]
 pub enum Token {
     #[token("def")]
     Def,
@@ -70,7 +74,10 @@ pub enum Token {
     #[token("is")]
     Is,
 
-    #[regex("[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
+    // Идентификаторы в юникоде: русские имена функций и переменных —
+    // основа автоматизаций на Spark («def состояние():» компилируется
+    // в легальный rust-идентификатор).
+    #[regex(r"[\p{XID_Start}_][\p{XID_Continue}_]*", |lex| lex.slice().to_string())]
     Ident(String),
 
     #[regex(r"0[xX][0-9a-fA-F]+", |lex| lex.slice().to_string())]
